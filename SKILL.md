@@ -43,3 +43,13 @@ await chronicle.checkpoint("Refactoring user authentication logic");
 // If tests fail completely and context is polluted:
 await chronicle.rollback(); // Restores context to the last checkpoint
 ```
+
+
+---
+
+## ⚡ Spark Breakthrough Enhancement
+
+- **Feature**: **Semantic State Time-Travel**
+- **Description**: Enables agents to revert chat memory to exact decision checkpoints without context loss.
+- **Synergy**: Integrated with `keel` (state dispatcher) & `chisel` (compression).
+- **Framework**: Applied via the `spark` 4-Lens Lateral Ideation Engine.
