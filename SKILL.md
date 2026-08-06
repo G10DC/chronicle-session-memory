@@ -53,9 +53,19 @@ await chronicle.rollback(); // Restores context to the last checkpoint
 
 ---
 
-## ⚡ Spark Breakthrough Enhancement
+## Spark Breakthrough Enhancement
 
 - **Feature**: **Semantic State Time-Travel**
 - **Description**: Enables agents to revert chat memory to exact decision checkpoints without context loss.
 - **Synergy**: Integrated with `keel` (state dispatcher) & `chisel` (compression).
 - **Framework**: Applied via the `spark` 4-Lens Lateral Ideation Engine.
+
+
+## When to use
+
+- Primary domain workflow execution as specified in frontmatter description.
+
+
+## When NOT to use
+
+- Tasks outside declared skill scope or handled by specialized sibling skills.
