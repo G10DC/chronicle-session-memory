@@ -5,6 +5,6 @@
   "description": "Trajectory compression and checkpoint memory manager.",
   "license": "MIT",
   "scripts": {
-    "test": "node --test test/**/*.test.js"
+    "test": "node --test test/*.test.js",
   }
 }
