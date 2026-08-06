@@ -1,6 +1,12 @@
 ---
 name: chronicle
-description: Trajectory compression and checkpoint memory manager. Compresses long chat histories into structured semantic checkpoints to prevent context window saturation while preserving critical design decisions. Inspired by caveman-code, agent-memory-compressor, and Context Codec.
+description: >-
+  Trajectory compression and checkpoint memory manager. Compresses long chat
+  histories into structured semantic checkpoints to prevent context window
+  saturation while preserving critical design decisions. Use when a long session
+  risks losing important context and you need persistent checkpoint memory.
+  Never use for in-flight token compression -- use chisel instead; never use for
+  deciding what to load -- use portage.
 ---
 
 # Chronicle
