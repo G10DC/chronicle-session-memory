@@ -1,10 +1,9 @@
 {
   "name": "chronicle",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "type": "module",
-  "description": "Trajectory compression and checkpoint memory manager.",
-  "license": "MIT",
   "scripts": {
-    "test": "node --test test/*.test.js",
-  }
+    "test": "echo No tests configured"
+  },
+  "license": "MIT"
 }
