@@ -1,71 +1,49 @@
 ---
 name: chronicle
+status: implemented
 description: >-
-  Trajectory compression and checkpoint memory manager. Compresses long chat
-  histories into structured semantic checkpoints to prevent context window
-  saturation while preserving critical design decisions. Use when a long session
-  risks losing important context and you need persistent checkpoint memory.
-  Never use for in-flight token compression -- use chisel instead; never use for
-  deciding what to load -- use portage.
+  In-memory checkpoint stack: snapshots a JSON-serializable state with a
+  SHA-256 hash, and pops the most recent one back on rollback after verifying
+  the hash matches. Also a duplicate-line/noise-line log compressor. Lives
+  entirely in one process's memory -- nothing is written to disk. Never use
+  for in-flight token compression -- use chisel; never expect filesystem
+  rollback or keel audit-log integration -- neither exists here.
 ---
 
 # Chronicle
 
-Trajectory Compression & Checkpoint Memory. Chronicle keeps the agent's context window light and efficient during long-running sessions by dynamically pruning redundant execution histories and saving stable, tamper-evident checkpoints of system state and design rationale.
+**In-memory checkpoint stack with hash-verified pop, plus a log-line deduplicator.** Holds a JS array of checkpoints in process memory. Doesn't touch the filesystem or integrate with any other skill.
 
-## Golden Rules
-1. **Never drop semantic commitments**: Compress the raw transcript but never lose constraints, user-defined preferences, resolved bugs, or system design choices (semantic atoms).
-2. **Tamper-Evident Checkpointing**: Checkpoints must be cryptographically hashed and linked to `keel`'s audit logs to prevent prompt injection from rewriting history.
-3. **Dynamic Rollback**: Support Git-like revert capability to reset the agent session state to any previous checkpoint when a branch or implementation path fails.
-4. **Token-Aware Summarization**: Trigger compression proactively when context size exceeds 50-60% of the target budget.
+## What it actually does
+`createCheckpoint(state)` hashes and pushes `{ timestamp, state, hash }` onto an in-memory array,
+returns the hash. `rollback()` pops the latest, recomputes its hash, throws on mismatch (a
+corruption check, not a security boundary), returns the parsed state. `compressLog(logText)` drops
+consecutive duplicate lines and a fixed set of noise prefixes (`...`/`loading`/`waiting`/`processing`).
 
-## Checkpointing and Rollback Flow
-```mermaid
-graph TD
-    A[Start Session] --> B[Perform Steps & Execute Tools]
-    B --> C{Context > 60% Budget?}
-    C -- Yes --> D[Identify Semantic Atoms & Compress History]
-    D --> E[Save Cryptographic Checkpoint]
-    C -- No --> B
-    E --> F[Continue Session with Clean Context]
-    F -- Failure / Reset Needed --> G[Rollback to Checkpoint E]
+## What it does not do (despite "tamper-evident checkpointing")
+- **Nothing persists.** Checkpoints die with the process — this is "get back what you saved
+  earlier in this run," not workspace rollback.
+- **No `keel` integration.** The hash only detects accidental in-memory corruption, not tampering.
+- **No token-aware auto-triggering** — you decide when to checkpoint.
+- **`compressLog` is a duplicate/noise filter**, not semantic compression of decisions or constraints.
+
+## Usage (library, not a CLI)
+
+```js
+import { Chronicle } from './lib/chronicle.js';
+
+const chronicle = new Chronicle();
+const hash = chronicle.createCheckpoint({ step: 'before-refactor', files: [...] });
+const restored = chronicle.rollback(); // throws if the in-memory record was corrupted
 ```
-
-## Implementation Frameworks & Tooling
-* **Session Control**: Inspired by `caveman-code`, manage agent execution state with discrete `/checkpoint` and `/rollback` commands.
-* **Semantic Compression**: Leverage the concept of `Context Codec` to store "commitments" (decisions made) rather than generic text summarizations.
-* **Redundancy Reduction**: Use local pre-processors (similar to `sqz` in Rust) to trim long command outputs, diffs, and logs to high-value snippets before they hit the context window.
-
-## Usage Guide
-Save checkpoints of the session during complex tasks:
-```javascript
-import { ChronicleMemory } from 'chronicle';
-
-const chronicle = new ChronicleMemory();
-
-// Save state before a risky refactoring step
-await chronicle.checkpoint("Refactoring user authentication logic");
-
-// If tests fail completely and context is polluted:
-await chronicle.rollback(); // Restores context to the last checkpoint
-```
-
-
----
-
-## Spark Breakthrough Enhancement
-
-- **Feature**: **Semantic State Time-Travel**
-- **Description**: Enables agents to revert chat memory to exact decision checkpoints without context loss.
-- **Synergy**: Integrated with `keel` (state dispatcher) & `chisel` (compression).
-- **Framework**: Applied via the `spark` 4-Lens Lateral Ideation Engine.
-
 
 ## When to use
 
-- Primary domain workflow execution as specified in frontmatter description.
-
+- A lightweight, same-process undo stack for one script/session run, with a corruption check on pop.
+- A quick duplicate-line/noise filter on log text.
 
 ## When NOT to use
 
-- Tasks outside declared skill scope or handled by specialized sibling skills.
+- **State surviving past the process, or real filesystem rollback** — nothing here persists.
+- **In-flight token compression** → use `chisel`. **Deciding what to load** → use `portage`.
+- **Relying on the hash as a security boundary** — it only catches accidental corruption.
